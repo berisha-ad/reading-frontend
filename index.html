@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Human Design Reading Formular</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        display: block;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      input,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        box-sizing: border-box;
+      }
+
+      button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #218838;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Human Design Reading</h2>
+    <form id="readingForm">
+      <label for="firstName">Vorname</label>
+      <input type="text" id="firstName" value="Katarina Kirsten" required />
+
+      <label for="lastName">Nachname</label>
+      <input type="text" id="lastName" value="Packová" required />
+
+      <label for="externalId">Externe ID</label>
+      <input type="text" id="externalId" value="ct_katarina" required />
+
+      <label for="birthdate">Geburtsdatum (z. B. 2007-10-04)</label>
+      <input type="text" id="birthdate" value="2007-10-04" required />
+
+      <label for="birthtime">Geburtszeit (z. B. 11:45)</label>
+      <input type="text" id="birthtime" value="11:45" required />
+
+      <label for="timezone">Zeitzone (z. B. Europe/Bratislava)</label>
+      <input type="text" id="timezone" value="Europe/Bratislava" required />
+
+      <label for="language">Sprache (z. B. german)</label>
+      <input type="text" id="language" value="german" required />
+
+      <button type="submit">Reading anfordern</button>
+    </form>
+
+    <script>
+      document
+        .getElementById("readingForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const data = {
+            firstName: document.getElementById("firstName").value.trim(),
+            lastName: document.getElementById("lastName").value.trim(),
+            externalId: document.getElementById("externalId").value.trim(),
+            birthdate: document.getElementById("birthdate").value.trim(),
+            birthtime: document.getElementById("birthtime").value.trim(),
+            timezone: document.getElementById("timezone").value.trim(),
+            language: document.getElementById("language").value.trim(),
+          };
+
+          try {
+            const response = await fetch(
+              "https://orca-healthy-reasonably.ngrok-free.app/api/reading",
+              {
+                // Ziel-URL anpassen
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Fehler beim Abrufen der ZIP-Datei");
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+
+            const filename =
+              response.headers
+                .get("Content-Disposition")
+                ?.split("filename=")[1]
+                ?.replace(/"/g, "") || "reading_package.zip";
+
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error("Fehler:", error);
+            alert("Ein Fehler ist aufgetreten. Bitte erneut versuchen.");
+          }
+        });
+    </script>
+  </body>
+</html>
