@@ -2,15 +2,19 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <title>Human Design Reading Formular</title>
+    <title>Human Design Tools</title>
     <style>
       body {
         font-family: Arial, sans-serif;
-        max-width: 500px;
-        margin: 50px auto;
+        max-width: 600px;
+        margin: 40px auto;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        margin-top: 40px;
       }
 
       label {
@@ -44,7 +48,8 @@
         background-color: #218838;
       }
 
-      #loader {
+      #loader,
+      #timezoneLoader {
         display: none;
         color: #555;
         margin-top: 15px;
@@ -56,34 +61,54 @@
         color: green;
         margin-top: 15px;
       }
+
+      #timezoneResults ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      #timezoneResults li {
+        margin-bottom: 12px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background-color: #f9f9f9;
+      }
+
+      #timezoneResults small {
+        display: block;
+        margin-top: 4px;
+        color: #333;
+      }
     </style>
   </head>
   <body>
-    <h2>Human Design Reading</h2>
+    <!-- FORMULAR 1: Human Design Reading -->
+    <h2>Human Design Reading anfordern</h2>
     <form id="readingForm">
       <label for="firstName">Vorname u. Zweitname</label>
-      <input type="text" id="firstName" value="" required />
+      <input type="text" id="firstName" required />
 
       <label for="lastName">Nachname</label>
-      <input type="text" id="lastName" value="" required />
+      <input type="text" id="lastName" required />
 
       <label for="externalId">Externe ID</label>
-      <input type="text" id="externalId" value="" required />
+      <input type="text" id="externalId" required />
 
       <label for="birthdate">Geburtsdatum (z. B. 2007-10-24)</label>
-      <input type="text" id="birthdate" value="" required />
+      <input type="text" id="birthdate" required />
 
       <label for="birthtime">Geburtszeit (z. B. 11:45)</label>
-      <input type="text" id="birthtime" value="" required />
+      <input type="text" id="birthtime" required />
 
       <label for="timezone">Zeitzone (z. B. Europe/Bratislava)</label>
-      <input type="text" id="timezone" value="" required />
+      <input type="text" id="timezone" required />
 
       <label for="language">Sprache (z. B. German)</label>
       <input type="text" id="language" value="German" required />
 
       <label for="email">E-Mail-Adresse</label>
-      <input type="email" id="email" value="" required />
+      <input type="email" id="email" required />
 
       <button type="submit">Reading anfordern</button>
       <p id="loader">Daten werden verarbeitet...</p>
@@ -92,13 +117,25 @@
       </p>
     </form>
 
+    <!-- FORMULAR 2: Zeitzone suchen -->
+    <h2>Zeitzone anhand des Geburtsorts finden</h2>
+    <form id="timezoneForm">
+      <label for="birthPlace">Geburtsort (z. B. Berlin, Paris, etc.)</label>
+      <input type="text" id="birthPlace" required />
+      <button type="submit">Zeitzonen suchen</button>
+      <p id="timezoneLoader">Suche läuft...</p>
+    </form>
+
+    <div id="timezoneResults"></div>
+
     <script>
+      // FORMULAR 1 – Reading anfordern
       document
         .getElementById("readingForm")
         .addEventListener("submit", async function (e) {
           e.preventDefault();
 
-          const submitButton = document.querySelector("button[type='submit']");
+          const submitButton = document.querySelector("#readingForm button");
           const loader = document.getElementById("loader");
           const successMessage = document.getElementById("success");
 
@@ -118,29 +155,75 @@
           };
 
           try {
-            const response = await fetch(
-              "https://orca-healthy-reasonably.ngrok-free.app/api/reading",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-              }
-            );
+            const response = await fetch("/api/reading", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
 
-            if (!response.ok) {
-              throw new Error("Serverfehler");
-            }
+            if (!response.ok) throw new Error("Fehler beim Versenden");
 
             successMessage.style.display = "block";
-            // optional: Formular zurücksetzen
-            // document.getElementById("readingForm").reset();
+            // Optional: document.getElementById("readingForm").reset();
           } catch (error) {
             console.error("Fehler:", error);
             alert("Ein Fehler ist aufgetreten. Bitte erneut versuchen.");
           } finally {
             submitButton.disabled = false;
+            loader.style.display = "none";
+          }
+        });
+
+      // FORMULAR 2 – Zeitzone anhand Geburtsort suchen
+      document
+        .getElementById("timezoneForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const loader = document.getElementById("timezoneLoader");
+          const resultBox = document.getElementById("timezoneResults");
+          const location = document.getElementById("birthPlace").value.trim();
+
+          loader.style.display = "block";
+          resultBox.innerHTML = "";
+
+          try {
+            const response = await fetch("/api/timezone", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ location }),
+            });
+
+            if (!response.ok) throw new Error("Fehler bei der Zeitzonen-Suche");
+
+            const results = await response.json();
+
+            if (!results || results.length === 0) {
+              resultBox.innerHTML = "<p>Keine Ergebnisse gefunden.</p>";
+              return;
+            }
+
+            const list = document.createElement("ul");
+
+            results.forEach((item) => {
+              const li = document.createElement("li");
+              li.innerHTML = `
+            <strong>${item.value}</strong>
+            <small>Zeitzone: ${item.timezone}</small>
+            <small>Land: ${item.country}</small>
+          `;
+              list.appendChild(li);
+            });
+
+            resultBox.appendChild(list);
+          } catch (error) {
+            console.error(error);
+            resultBox.innerHTML = "<p>Es ist ein Fehler aufgetreten.</p>";
+          } finally {
             loader.style.display = "none";
           }
         });
