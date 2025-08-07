@@ -50,6 +50,12 @@
         margin-top: 15px;
         font-style: italic;
       }
+
+      #success {
+        display: none;
+        color: green;
+        margin-top: 15px;
+      }
     </style>
   </head>
   <body>
@@ -76,8 +82,14 @@
       <label for="language">Sprache (z. B. German)</label>
       <input type="text" id="language" value="German" required />
 
+      <label for="email">E-Mail-Adresse</label>
+      <input type="email" id="email" value="" required />
+
       <button type="submit">Reading anfordern</button>
       <p id="loader">Daten werden verarbeitet...</p>
+      <p id="success">
+        Vielen Dank! Dein Reading wird dir per E-Mail zugesendet.
+      </p>
     </form>
 
     <script>
@@ -88,10 +100,11 @@
 
           const submitButton = document.querySelector("button[type='submit']");
           const loader = document.getElementById("loader");
+          const successMessage = document.getElementById("success");
 
-          // UI sperren
           submitButton.disabled = true;
           loader.style.display = "block";
+          successMessage.style.display = "none";
 
           const data = {
             firstName: document.getElementById("firstName").value.trim(),
@@ -101,6 +114,7 @@
             birthtime: document.getElementById("birthtime").value.trim(),
             timezone: document.getElementById("timezone").value.trim(),
             language: document.getElementById("language").value.trim(),
+            email: document.getElementById("email").value.trim(),
           };
 
           try {
@@ -116,31 +130,16 @@
             );
 
             if (!response.ok) {
-              throw new Error("Fehler beim Abrufen der ZIP-Datei");
+              throw new Error("Serverfehler");
             }
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-
-            const filename =
-              response.headers
-                .get("Content-Disposition")
-                ?.split("filename=")[1]
-                ?.replace(/"/g, "") ||
-              `PSYCHE_Reading_${data.firstName}_${data.lastName}.zip`;
-
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
+            successMessage.style.display = "block";
+            // optional: Formular zurücksetzen
+            // document.getElementById("readingForm").reset();
           } catch (error) {
             console.error("Fehler:", error);
             alert("Ein Fehler ist aufgetreten. Bitte erneut versuchen.");
           } finally {
-            // UI zurücksetzen
             submitButton.disabled = false;
             loader.style.display = "none";
           }
