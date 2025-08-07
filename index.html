@@ -155,13 +155,16 @@
           };
 
           try {
-            const response = await fetch("/api/reading", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(data),
-            });
+            const response = await fetch(
+              "https://orca-healthy-reasonably.ngrok-free.app/api/reading",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+              }
+            );
 
             if (!response.ok) throw new Error("Fehler beim Versenden");
 
@@ -190,13 +193,16 @@
           resultBox.innerHTML = "";
 
           try {
-            const response = await fetch("/api/timezone", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ location }),
-            });
+            const response = await fetch(
+              "https://orca-healthy-reasonably.ngrok-free.app/api/timezone",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ location }),
+              }
+            );
 
             if (!response.ok) throw new Error("Fehler bei der Zeitzonen-Suche");
 
